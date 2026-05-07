@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ReelReads {% block title %}{% endblock %}</title>
+
+  <!-- Google Fonts: editorial pairing -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── CSS Variables ────────────────────────────────────────────── */
+    :root {
+      --bg:        #0f0e0c;
+      --surface:   #1a1916;
+      --card:      #222118;
+      --border:    #333128;
+      --gold:      #c9a84c;
+      --gold-lt:   #e8c96a;
+      --cream:     #f5f0e8;
+      --muted:     #8a8070;
+      --accent:    #d4613a;
+      --green:     #4caf7d;
+      --radius:    10px;
+      --font-head: 'Playfair Display', Georgia, serif;
+      --font-body: 'DM Sans', sans-serif;
+      --shadow:    0 4px 24px rgba(0,0,0,0.5);
+    }
+
+    /* ── Reset & Base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--cream);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    a { color: var(--gold); text-decoration: none; }
+    a:hover { color: var(--gold-lt); }
+    img { max-width: 100%; }
+
+    /* ── Navbar ───────────────────────────────────────────────────── */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-logo {
+      font-family: var(--font-head);
+      font-size: 1.5rem;
+      color: var(--gold);
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--cream); }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a {
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+      display: flex; align-items: center; gap: 0.35rem;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--cream); }
+    .nav-links a.active { color: var(--gold); }
+
+    /* ── Tooltip ──────────────────────────────────────────────────── */
+    /* IH#1 & IH#3: tooltips reveal info on hover without cluttering UI */
+    [data-tooltip] { position: relative; cursor: help; }
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2e2b23;
+      color: var(--cream);
+      font-size: 0.78rem;
+      line-height: 1.4;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      max-width: 240px;
+      white-space: normal;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 200;
+      font-family: var(--font-body);
+    }
+    [data-tooltip]:hover::after { opacity: 1; }
+
+    /* ── Shared Layout ────────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── Buttons ──────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.55rem 1.2rem;
+      border-radius: var(--radius);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.18s;
+    }
+    .btn-gold  { background: var(--gold); color: #0f0e0c; }
+    .btn-gold:hover { background: var(--gold-lt); color: #0f0e0c; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--cream);
+    }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-danger { background: #7a2a1a; color: var(--cream); }
+    .btn-danger:hover { background: var(--accent); }
+    .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+
+    /* ── Card ─────────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover { transform: translateY(-3px); border-color: var(--gold); }
+
+    /* ── Badge ────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+    .badge-book  { background: #1e3a5f; color: #7bbfff; }
+    .badge-movie { background: #3a1e1e; color: #ff9f7b; }
+    .badge-genre { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── Stars ────────────────────────────────────────────────────── */
+    .stars { color: var(--gold); font-size: 0.85rem; }
+
+    /* ── Toast notification ───────────────────────────────────────── */
+    /* IH#6: confirms to user what just happened */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem; right: 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--gold);
+      color: var(--cream);
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.88rem;
+      font-weight: 500;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── Footer ───────────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+      border-top: 1px solid var(--border);
+      margin-top: 4rem;
+    }
+
+    /* ── Fade-in animation ────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(16px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.45s ease both; }
+
+    /* ── Responsive ───────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .nav-links a span { display: none; }
+      nav { padding: 0 1rem; }
+    }
+  </style>
+
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Reel<span>Reads</span></a>
+  <div class="nav-links">
+    <!-- IH#4: consistent nav is always visible on every page -->
+    <a href="/"
+       class="{% if request.path == '/' %}active{% endif %}"
+       data-tooltip="Browse all books and movies on the home page">
+      🏠 <span>Home</span>
+    </a>
+    <a href="/search"
+       class="{% if request.path == '/search' %}active{% endif %}"
+       data-tooltip="Search and filter by title, genre, or type">
+      🔍 <span>Search</span>
+    </a>
+    <a href="/favorites"
+       class="{% if request.path == '/favorites' %}active{% endif %}"
+       data-tooltip="View and manage your saved recommendations">
+      ⭐ <span>Favorites</span>
+    </a>
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<!-- IH#6: toast tells users what just happened -->
+<div id="toast"></div>
+
+<footer>
+  ReelReads — CS 361 Milestone #1 &nbsp;|&nbsp; Test data only, no real accounts required
+</footer>
+
+<script>
+  // ── Toast helper ─────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2800);
+  }
+
+  // ── Favorite toggle (AJAX) ────────────────────────────────────────────────────
+  // IH#5: reversible; IH#7: button OR keyboard-accessible
+  document.addEventListener("click", async function(e) {
+    const btn = e.target.closest(".fav-btn");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const res = await fetch(`/favorite/toggle/${id}`, { method: "POST" });
+    const data = await res.json();
+    if (data.action === "added") {
+      btn.textContent = "★ Saved";
+      btn.classList.add("saved");
+      showToast("Added to favorites! Visit Favorites to manage your list.");
+    } else {
+      btn.textContent = "☆ Save";
+      btn.classList.remove("saved");
+      showToast("Removed from favorites.");
+    }
+  });
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

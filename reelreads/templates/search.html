@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}— Search{% endblock %}
+
+{% block head %}
+<style>
+  .search-hero {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 2.5rem 1.5rem;
+  }
+  .search-hero h1 {
+    font-family: var(--font-head);
+    font-size: 1.8rem;
+    margin-bottom: 0.35rem;
+  }
+  .search-hero p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+  /* IH#7: multiple search approaches in one form */
+  .search-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+    max-width: 860px;
+  }
+  .field-group { display: flex; flex-direction: column; gap: 0.3rem; }
+  .field-group label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+
+  /* IH#4: search input looks like familiar search bars (Google-style) */
+  .search-input {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--cream);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    padding: 0.6rem 1rem;
+    width: 280px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--gold); }
+  .search-input::placeholder { color: var(--muted); }
+
+  select.search-input { cursor: pointer; }
+
+  /* IH#5: clear/reset button lets users backtrack their filters */
+  .btn-clear {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    border-radius: var(--radius);
+    padding: 0.6rem 1rem;
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    align-self: flex-end;
+  }
+  .btn-clear:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Results ────────────────────────────────────────────────────── */
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .result-count { color: var(--muted); font-size: 0.88rem; }
+  .result-count strong { color: var(--cream); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.25rem;
+  }
+  .item-card { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .item-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .item-title { font-family: var(--font-head); font-size: 1.05rem; color: var(--cream); line-height: 1.3; }
+  .item-author { font-size: 0.8rem; color: var(--muted); }
+  .item-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+  .time-cost { font-size: 0.75rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: auto; }
+  .time-cost span { color: var(--gold); }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .fav-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 6px; padding: 0.3rem 0.65rem; font-size: 0.78rem;
+    cursor: pointer; transition: all 0.2s; font-family: var(--font-body);
+  }
+  .fav-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .fav-btn.saved { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+  .stars { color: var(--gold); font-size: 0.85rem; }
+
+  .no-results {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--muted);
+  }
+  .no-results h3 { font-family: var(--font-head); color: var(--cream); margin-bottom: 0.5rem; font-size: 1.4rem; }
+  .no-results p  { font-size: 0.9rem; margin-bottom: 1.25rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="search-hero fade-up">
+  <div style="max-width: 1100px; margin: 0 auto;">
+    <h1>Search & Filter</h1>
+    <!-- IH#7: tells users there are multiple ways to search -->
+    <p>Find what you're looking for by keyword, genre, or type — use any combination.</p>
+
+    <!-- IH#7: multiple search approaches simultaneously available -->
+    <form class="search-form" method="get" action="/search" id="search-form">
+
+      <!-- Approach 1: keyword text search -->
+      <div class="field-group">
+        <label for="q"
+               data-tooltip="Search by title or author name — partial matches work too">
+          🔍 Keyword search
+        </label>
+        <input id="q" name="q" type="text" class="search-input"
+               placeholder="Title or author…"
+               value="{{ query }}"
+               data-tooltip="Type any part of a title or author name">
+      </div>
+
+      <!-- Approach 2: genre dropdown filter -->
+      <div class="field-group">
+        <label for="genre"
+               data-tooltip="Narrow results to a specific genre">
+          🎭 Filter by genre
+        </label>
+        <select id="genre" name="genre" class="search-input"
+                data-tooltip="Browse all items in a specific genre">
+          <option value="">All genres</option>
+          {% for g in genres %}
+          <option value="{{ g }}" {% if g == genre %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Approach 3: type filter (book vs movie) -->
+      <div class="field-group">
+        <label for="type"
+               data-tooltip="Show only books, only movies, or everything">
+          📚 Type
+        </label>
+        <select id="type" name="type" class="search-input">
+          <option value="">Books & Movies</option>
+          <option value="book"  {% if kind == 'book'  %}selected{% endif %}>Books only</option>
+          <option value="movie" {% if kind == 'movie' %}selected{% endif %}>Movies only</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label>&nbsp;</label>
+        <button type="submit" class="btn btn-gold">Search</button>
+      </div>
+
+      <!-- IH#5: clear all filters = backtrack to default state -->
+      {% if query or genre or kind %}
+      <div class="field-group">
+        <label>&nbsp;</label>
+        <a href="/search" class="btn-clear"
+           data-tooltip="Remove all filters and start over">✕ Clear filters</a>
+      </div>
+      {% endif %}
+    </form>
+
+    <!-- IH#2: set expectation on how many results they'll see -->
+    {% if query or genre or kind %}
+    <p style="margin-top: 0.75rem; font-size: 0.82rem; color: var(--muted);">
+      Showing results for
+      {% if query %}<strong style="color:var(--cream)">"{{ query }}"</strong>{% endif %}
+      {% if genre %}in genre <strong style="color:var(--cream)">{{ genre }}</strong>{% endif %}
+      {% if kind %}({{ kind }}s only){% endif %}
+    </p>
+    {% endif %}
+  </div>
+</section>
+
+<div class="container">
+  <div class="results-header fade-up">
+    <p class="result-count">
+      <strong>{{ results | length }}</strong> result{{ 's' if results | length != 1 else '' }} found
+    </p>
+    <!-- IH#7: keyboard shortcut alternative — press Enter to submit -->
+    <p style="font-size:0.78rem; color: var(--muted);"
+       data-tooltip="You can also press Enter in the keyword field to search — no need to click the button">
+      💡 Tip: Press <kbd style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:0.1rem 0.4rem;font-size:0.76rem">Enter</kbd> to search
+    </p>
+  </div>
+
+  {% if results %}
+  <div class="grid">
+    {% for item in results %}
+    <div class="card item-card fade-up" style="animation-delay: {{ '%.2f'|format(loop.index0 * 0.04) }}s;">
+      <div class="item-card-top">
+        <div>
+          <span class="badge badge-{{ item.type }}">{{ item.type | capitalize }}</span>
+          <span class="badge badge-genre">{{ item.genre }}</span>
+        </div>
+        <span class="stars"
+              data-tooltip="Rating: {{ item.rating }} / 5.0">★ {{ item.rating }}</span>
+      </div>
+      <div>
+        <h3 class="item-title">
+          <a href="/item/{{ item.id }}" style="color:inherit;">{{ item.title }}</a>
+        </h3>
+        <p class="item-author">{{ item.author }}</p>
+      </div>
+      <p class="item-desc">{{ item.description[:90] }}{% if item.description|length > 90 %}… <a href="/item/{{ item.id }}" style="font-size:0.8rem">read more</a>{% endif %}</p>
+      <p class="time-cost">⏱ Time commitment: <span>{{ item.time_to_finish }}</span></p>
+      <div class="card-footer">
+        <a href="/item/{{ item.id }}" class="btn btn-outline btn-sm">Details</a>
+        <button class="fav-btn {% if item.id in favorites %}saved{% endif %}"
+                data-id="{{ item.id }}"
+                data-tooltip="Save to favorites — removable anytime">
+          {% if item.id in favorites %}★ Saved{% else %}☆ Save{% endif %}
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="no-results fade-up">
+    <h3>No results found</h3>
+    <p>Try a different keyword, or remove some filters.</p>
+    <!-- IH#5 & IH#6: explicit next steps when nothing is found -->
+    <a href="/search" class="btn btn-outline">← Clear filters and try again</a>
+    &nbsp;
+    <a href="/" class="btn btn-gold">Browse all items</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // IH#7: auto-submit on select change (alternative to clicking Search)
+  document.getElementById("genre").addEventListener("change", function() {
+    document.getElementById("search-form").submit();
+  });
+  document.getElementById("type").addEventListener("change", function() {
+    document.getElementById("search-form").submit();
+  });
+</script>
+{% endblock %}

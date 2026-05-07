@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}— Favorites{% endblock %}
+
+{% block head %}
+<style>
+  .page-header {
+    padding: 2.5rem 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  .page-header h1 { font-family: var(--font-head); font-size: 2rem; margin-bottom: 0.3rem; }
+  .page-header p  { color: var(--muted); font-size: 0.9rem; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+  }
+  .item-card { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .item-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .item-title { font-family: var(--font-head); font-size: 1.05rem; color: var(--cream); line-height: 1.3; }
+  .item-author { font-size: 0.8rem; color: var(--muted); }
+  .time-cost { font-size: 0.75rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: auto; }
+  .time-cost span { color: var(--gold); }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .stars { color: var(--gold); font-size: 0.85rem; }
+
+  /* IH#8: remove button requires confirmation before action */
+  .remove-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-body);
+  }
+  .remove-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* IH#8: danger zone for clear-all */
+  .danger-zone {
+    border: 1px dashed #5a2a1a;
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .danger-zone-text { font-size: 0.88rem; }
+  .danger-zone-text strong { color: var(--accent); display: block; margin-bottom: 0.15rem; }
+  .danger-zone-text p { color: var(--muted); }
+
+  .empty-state {
+    text-align: center;
+    padding: 5rem 1rem;
+    color: var(--muted);
+  }
+  .empty-state h2 { font-family: var(--font-head); color: var(--cream); font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .empty-state p  { margin-bottom: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header fade-up">
+    <h1>⭐ Your Favorites</h1>
+    <!-- IH#5: reassure users they can undo any removal -->
+    <p>
+      {{ favorites | length }} saved item{{ 's' if favorites | length != 1 else '' }}.
+      You can remove items individually or clear the whole list — additions and removals take effect instantly.
+    </p>
+  </div>
+
+  {% if favorites %}
+  <div class="grid">
+    {% for item in favorites %}
+    <div class="card item-card fade-up" style="animation-delay: {{ loop.index0 * 0.05 }}s">
+      <div class="item-card-top">
+        <div>
+          <span class="badge badge-{{ item.type }}">{{ item.type | capitalize }}</span>
+          <span class="badge badge-genre">{{ item.genre }}</span>
+        </div>
+        <span class="stars"
+              data-tooltip="Rating: {{ item.rating }} / 5.0">★ {{ item.rating }}</span>
+      </div>
+      <div>
+        <h3 class="item-title">
+          <a href="/item/{{ item.id }}" style="color:inherit;">{{ item.title }}</a>
+        </h3>
+        <p class="item-author">{{ item.author }}</p>
+      </div>
+      <p class="time-cost">⏱ Time commitment: <span>{{ item.time_to_finish }}</span></p>
+      <div class="card-footer">
+        <a href="/item/{{ item.id }}" class="btn btn-outline btn-sm">Details</a>
+        <!-- IH#8: removal triggers JS confirmation before posting form -->
+        <form method="post" action="/favorite/remove/{{ item.id }}" class="remove-form">
+          <button type="submit" class="remove-btn"
+                  data-title="{{ item.title }}"
+                  data-tooltip="Remove this item from your favorites list">
+            ✕ Remove
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- IH#8: clear-all is a dangerous irreversible-looking action → confirmation required -->
+  <div class="danger-zone fade-up">
+    <div class="danger-zone-text">
+      <strong>⚠️ Clear All Favorites</strong>
+      <p>This will remove all {{ favorites | length }} saved items. You can always re-save them later.</p>
+    </div>
+    <form method="post" action="/clear_favorites" id="clear-form">
+      <button type="submit" class="btn btn-danger"
+              data-tooltip="Removes every saved item. You will need to re-add them manually.">
+        🗑 Clear All
+      </button>
+    </form>
+  </div>
+
+  <!-- IH#6: explicit next-step paths -->
+  <div style="margin-top: 2rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <a href="/" class="btn btn-outline"
+       data-tooltip="Go back to the home page to browse more items">← Browse more</a>
+    <a href="/search" class="btn btn-outline"
+       data-tooltip="Search and filter to find specific items">🔍 Search</a>
+  </div>
+
+  {% else %}
+  <!-- Empty state with clear next steps (IH#6) -->
+  <div class="empty-state fade-up">
+    <h2>No favorites yet</h2>
+    <p>Save items from the home page or search results to see them here.</p>
+    <a href="/" class="btn btn-gold"
+       data-tooltip="Go back to browse books and movies to add">Browse & Save Items →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // IH#8: confirmation before individual remove
+  document.querySelectorAll(".remove-form").forEach(form => {
+    form.addEventListener("submit", function(e) {
+      const btn   = form.querySelector(".remove-btn");
+      const title = btn.dataset.title;
+      // Prompt user to confirm — protects against accidental tinkering
+      const ok = confirm(`Remove "${title}" from your favorites?\n\nYou can always re-add it later.`);
+      if (!ok) e.preventDefault();
+    });
+  });
+
+  // IH#8: confirmation before clear-all (higher stakes = bigger warning)
+  document.getElementById("clear-form").addEventListener("submit", function(e) {
+    const ok = confirm(
+      "Clear ALL favorites?\n\n" +
+      "This will remove every saved item from your list.\n" +
+      "You will need to re-add them manually.\n\n" +
+      "Are you sure you want to continue?"
+    );
+    if (!ok) e.preventDefault();
+  });
+</script>
+{% endblock %}

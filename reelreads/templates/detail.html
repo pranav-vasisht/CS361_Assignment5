@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}— {{ item.title }}{% endblock %}
+
+{% block head %}
+<style>
+  .breadcrumb {
+    font-size: 0.82rem;
+    color: var(--muted);
+    padding: 1.25rem 0 0;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .breadcrumb a { color: var(--muted); }
+  .breadcrumb a:hover { color: var(--gold); }
+
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 2.5rem;
+    margin-top: 2rem;
+    align-items: start;
+  }
+  @media (max-width: 700px) {
+    .detail-layout { grid-template-columns: 1fr; }
+  }
+
+  .detail-eyebrow {
+    display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;
+  }
+  .detail-title {
+    font-family: var(--font-head);
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    line-height: 1.2;
+    margin-bottom: 0.3rem;
+  }
+  .detail-author { color: var(--muted); font-size: 1rem; margin-bottom: 1rem; }
+
+  .detail-rating {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .rating-num {
+    font-size: 2rem;
+    font-family: var(--font-head);
+    color: var(--gold);
+    line-height: 1;
+  }
+  .rating-label { font-size: 0.8rem; color: var(--muted); }
+
+  /* IH#3: full description shown here (user chose to click for more info) */
+  .detail-description {
+    font-size: 1rem;
+    line-height: 1.75;
+    color: var(--cream);
+    margin-bottom: 2rem;
+  }
+  .detail-description p { margin-bottom: 1rem; }
+
+  /* ── Sidebar card ─────────────────────────────────────────────── */
+  .sidebar-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    position: sticky;
+    top: 80px;
+  }
+  .sidebar-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .sidebar-row:last-of-type { border-bottom: none; }
+  .sidebar-label { color: var(--muted); }
+  .sidebar-val { color: var(--cream); font-weight: 500; text-align: right; }
+
+  /* IH#2: time cost prominently shown in sidebar */
+  .time-callout {
+    background: rgba(201,168,76,0.07);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.88rem;
+  }
+  .time-callout strong { color: var(--gold); display: block; font-size: 1rem; margin-bottom: 0.15rem; }
+  .time-callout p { color: var(--muted); }
+
+  .fav-btn-large {
+    width: 100%;
+    padding: 0.7rem;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--cream);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+  .fav-btn-large:hover { border-color: var(--gold); color: var(--gold); }
+  .fav-btn-large.saved { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+
+  /* IH#5: back button always visible */
+  .back-btn {
+    width: 100%;
+    padding: 0.6rem;
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    display: block;
+    text-decoration: none;
+  }
+  .back-btn:hover { color: var(--cream); border-color: var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <!-- IH#5: breadcrumb trail so users can backtrack -->
+  <nav class="breadcrumb fade-up" aria-label="breadcrumb">
+    <a href="/">Home</a> ›
+    <a href="/search">Search</a> ›
+    <span style="color: var(--cream);">{{ item.title }}</span>
+  </nav>
+
+  <div class="detail-layout fade-up" style="animation-delay:0.1s">
+
+    <!-- ── Main content ──────────────────────────────────────────── -->
+    <div>
+      <div class="detail-eyebrow">
+        <span class="badge badge-{{ item.type }}">{{ item.type | capitalize }}</span>
+        <span class="badge badge-genre">{{ item.genre }}</span>
+      </div>
+
+      <h1 class="detail-title">{{ item.title }}</h1>
+      <p class="detail-author">by {{ item.author }}</p>
+
+      <div class="detail-rating">
+        <span class="rating-num">{{ item.rating }}</span>
+        <div>
+          <div class="stars">★★★★★</div>
+          <div class="rating-label">out of 5.0</div>
+        </div>
+      </div>
+
+      <!-- IH#3: full description available here — user navigated to get it -->
+      <div class="detail-description">
+        <p>{{ item.description }}</p>
+        <p style="color:var(--muted); font-size:0.9rem;">
+          Whether you're looking for something to read on a rainy afternoon or a film
+          for movie night, this {{ item.type }} is well worth your time based on
+          community ratings and genre fit.
+        </p>
+      </div>
+
+      <!-- IH#6: explicit next steps at bottom of content -->
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+        <a href="/search?genre={{ item.genre }}" class="btn btn-outline"
+           data-tooltip="Find more {{ item.genre }} {{ item.type }}s like this one">
+          More {{ item.genre }} →
+        </a>
+        <a href="/search?type={{ item.type }}" class="btn btn-outline"
+           data-tooltip="Browse all {{ item.type }}s in the collection">
+          All {{ item.type | capitalize }}s →
+        </a>
+        <a href="/favorites" class="btn btn-outline"
+           data-tooltip="View your saved favorites list">
+          My Favorites →
+        </a>
+      </div>
+    </div>
+
+    <!-- ── Sidebar ────────────────────────────────────────────────── -->
+    <div>
+      <div class="sidebar-card">
+        <!-- IH#2: time cost callout front and center -->
+        <div class="time-callout">
+          <strong>⏱ {{ item.time_to_finish }}</strong>
+          <p>Estimated time to finish this {{ item.type }}</p>
+        </div>
+
+        <!-- IH#5: save is reversible — told via tooltip -->
+        <button class="fav-btn-large fav-btn {% if item.id in favorites %}saved{% endif %}"
+                data-id="{{ item.id }}"
+                data-tooltip="Saves to your Favorites list. You can remove it anytime from the Favorites page.">
+          {% if item.id in favorites %}★ Saved to Favorites{% else %}☆ Save to Favorites{% endif %}
+        </button>
+
+        <!-- IH#5: explicit back button — always available -->
+        <a href="javascript:history.back()" class="back-btn"
+           data-tooltip="Return to the previous page">
+          ← Go back
+        </a>
+
+        <div style="margin-top: 1.25rem;">
+          <div class="sidebar-row">
+            <span class="sidebar-label">Type</span>
+            <span class="sidebar-val">{{ item.type | capitalize }}</span>
+          </div>
+          <div class="sidebar-row">
+            <span class="sidebar-label">Genre</span>
+            <span class="sidebar-val">{{ item.genre }}</span>
+          </div>
+          <div class="sidebar-row">
+            <span class="sidebar-label">Creator</span>
+            <span class="sidebar-val">{{ item.author }}</span>
+          </div>
+          <div class="sidebar-row">
+            <span class="sidebar-label">Rating</span>
+            <span class="sidebar-val">{{ item.rating }} / 5.0</span>
+          </div>
+          <div class="sidebar-row">
+            <span class="sidebar-label">Time</span>
+            <span class="sidebar-val" style="color:var(--gold);">{{ item.time_to_finish }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
